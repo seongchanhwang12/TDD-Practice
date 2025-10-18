@@ -64,6 +64,7 @@ class GetUserPointUseCaseTest {
         assertThat(result.point()).isEqualTo(0L);
 
     }
+
     
 
 }
