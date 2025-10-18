@@ -4,9 +4,6 @@ import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.point.UserPoint;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -15,12 +12,13 @@ import static org.mockito.Mockito.mock;
 
 class GetUserPointUseCaseTest {
 
-    UserPointTable mockRepo = mock(UserPointTable.class);
-    GetUserPointUseCase sut = new GetUserPointUseCase(mockRepo);
-
     @Test
     @DisplayName("Given 유효한 userId, When 포인트를 조회하면 Then 유저 포인트를 반환한다")
     void givenValidUserId_whenGetUserPoint_thenReturnUserPoint() {
+        // given
+        UserPointTable mockRepo = mock(UserPointTable.class);
+        GetUserPointUseCase sut = new GetUserPointUseCase(mockRepo);
+
         long userId = 1L;
         long point = 1L;
 
@@ -34,6 +32,23 @@ class GetUserPointUseCaseTest {
         then(mockRepo).should().selectById(userId);
         assertThat(result.id()).isEqualTo(userPoint.id());
         assertThat(result.point()).isEqualTo(userPoint.point());
+
+    }
+
+    @Test
+    @DisplayName("Given 유효하지 않은 userId, When 포인트를 조회하면 Then 0포인트를 반환한다.")
+    void givenInvalidUserId_whenGetUserPoint_thenReturnEmptyUserPoint() {
+        // given
+        GetUserPointUseCase sut = new GetUserPointUseCase(new UserPointTable());
+
+        long userId = 0L;
+
+        // when
+        UserPoint result = sut.handle(userId);
+
+        // then
+        assertThat(result.id()).isEqualTo(userId);
+        assertThat(result.point()).isEqualTo(0L);
 
     }
 }
