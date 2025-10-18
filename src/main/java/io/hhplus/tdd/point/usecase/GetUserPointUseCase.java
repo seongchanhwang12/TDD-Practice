@@ -13,6 +13,6 @@ public class GetUserPointUseCase {
     private final UserPointTable userPointTable;
 
     public UserPoint handle(UserId userId) {
-        return userPointTable.selectById(userId.value());
+        return userPointTable.selectById(userId.id());
     }
 }

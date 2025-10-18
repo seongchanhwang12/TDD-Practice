@@ -17,7 +17,9 @@ public class PointController {
     private final GetUserPointUseCase getUserPointUseCase;
 
     /**
-     * TODO - 특정 유저의 포인트를 조회하는 기능을 작성해주세요.
+     * 특정 사용자의 포인트 조회 요청 처리
+     * TODO - API 스펙 변경시 대응을 위해 추후 공통 응답 객체를 담아 리턴하는 방식을 고려중입니다.
+     * @return UserPoint - 사용자 포인트 정보
      */
     @GetMapping("{id}")
     public UserPoint point(@PathVariable long id) {
@@ -25,7 +27,7 @@ public class PointController {
     }
 
     /**
-     * TODO - 특정 유저의 포인트 충전/이용 내역을 조회하는 기능을 작성해주세요.
+     *
      */
     @GetMapping("{id}/histories")
     public List<PointHistory> history(

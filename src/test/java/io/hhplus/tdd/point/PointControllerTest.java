@@ -20,7 +20,7 @@ class PointControllerTest {
     PointController controller = new PointController(useCase);
     MockMvc mockMvc;
 
-    /** 별도 통합테스트를 구성하므로 여기서는 Controller 의 단위테스트만 진행하기 위해 standaloneSetup 으로 controller 를 주입해 mockMvc 를 초기화 */
+    /** 여기서는 Controller 의 단위테스트만 진행하기 위해 standaloneSetup 으로 controller 를 주입해 mockMvc 를 초기화 */
     @BeforeEach
     void init(){
         mockMvc = MockMvcBuilders.standaloneSetup(controller)

@@ -13,8 +13,4 @@ public record UserId(Long id) {
             throw new PolicyViolationException(UserErrorCode.INVALID_USER, "UserId is not valid");
         }
     }
-
-    public Long value() {
-        return id;
-    }
 }

@@ -60,7 +60,7 @@ class GetUserPointUseCaseTest {
         UserPoint result = sut.handle(userId);
 
         // then
-        assertThat(result.id()).isEqualTo(userId.value());
+        assertThat(result.id()).isEqualTo(userId.id());
         assertThat(result.point()).isEqualTo(0L);
 
     }
