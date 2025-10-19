@@ -16,7 +16,7 @@ import static org.mockito.Mockito.mock;
 class ListUserPointHistoriesUseCaseTest {
 
     PointHistoryTable pointHistoryRepo = mock(PointHistoryTable.class);
-    ListUserPointHistoriesUseCase sut = new ListUserPointHistoriesUseCase(pointHistoryRepo);
+    ListPointHistoriesUseCase sut = new ListPointHistoriesUseCase(pointHistoryRepo);
 
 
     /**

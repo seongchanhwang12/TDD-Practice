@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.point.usecase.GetUserPointUseCase;
+import io.hhplus.tdd.point.usecase.ListPointHistoriesUseCase;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ public class PointController {
 
     private static final Logger log = LoggerFactory.getLogger(PointController.class);
     private final GetUserPointUseCase getUserPointUseCase;
+    private final ListPointHistoriesUseCase ListHistoriesUseCase;
 
     /**
      * 특정 사용자의 포인트 조회 요청 처리
@@ -33,7 +35,7 @@ public class PointController {
     public List<PointHistory> history(
             @PathVariable long id
     ) {
-        return List.of();
+        return ListHistoriesUseCase.handle(new UserId(id));
     }
 
     /**

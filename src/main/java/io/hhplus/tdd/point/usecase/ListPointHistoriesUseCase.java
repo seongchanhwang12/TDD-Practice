@@ -12,7 +12,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class ListUserPointHistoriesUseCase {
+public class ListPointHistoriesUseCase {
 
     private final PointHistoryTable pointHistoryRepo;
 
