@@ -61,7 +61,7 @@ class GetUserPointUseCaseTest {
 
         // then
         assertThat(result.id()).isEqualTo(userId.id());
-        assertThat(result.point()).isEqualTo(0L);
+        assertThat(result.point()).isZero();
 
     }
 
