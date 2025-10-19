@@ -56,7 +56,6 @@ class ListUserPointHistoriesUseCaseTest {
     /**
      * 특정 사용자의 포인트 내역 조회시 포인트 내역이 없을경우 실패 케이스
      *
-     * 검증
      * - 특정 사용자의 포인트 내역이 없을경우 NotFoundException 을 던져져야합니다.
      * - NotFoundException 의 ErrorCode 는 PointErrorCode.NotFound 를 담고있어야 합니다.
      */
