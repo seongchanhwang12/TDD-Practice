@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * TODO - API 스펙 변경시 유연한 대응을 위해 추후 공통 응답 객체를 담아 리턴하는 방식으로 전환 예정입니다.
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/point")
@@ -20,7 +23,6 @@ public class PointController {
 
     /**
      * 특정 사용자의 포인트 조회 요청 처리
-     * TODO - API 스펙 변경시 대응을 위해 추후 공통 응답 객체를 담아 리턴하는 방식을 고려중입니다.
      * @return UserPoint - 사용자 포인트 정보
      */
     @GetMapping("{id}")
@@ -29,7 +31,7 @@ public class PointController {
     }
 
     /**
-     *
+     * 특정 사용자의 포인트 내역 조회 요청 처리
      */
     @GetMapping("{id}/histories")
     public List<PointHistory> history(
