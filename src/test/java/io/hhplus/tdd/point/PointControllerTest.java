@@ -3,11 +3,15 @@ package io.hhplus.tdd.point;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.hhplus.tdd.ApiControllerAdvice;
+import io.hhplus.tdd.point.usecase.ChargePointUseCase;
 import io.hhplus.tdd.point.usecase.GetUserPointUseCase;
 import io.hhplus.tdd.point.usecase.ListPointHistoriesUseCase;
+import org.apache.catalina.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -16,18 +20,19 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.mock;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class PointControllerTest {
 
+    private static final Logger log = LoggerFactory.getLogger(PointControllerTest.class);
     GetUserPointUseCase userPointUseCase = mock(GetUserPointUseCase.class);
     ListPointHistoriesUseCase listHistoriesUseCase = mock(ListPointHistoriesUseCase.class);
+    ChargePointUseCase chargePointUseCase = mock(ChargePointUseCase.class);
 
-    PointController controller = new PointController(userPointUseCase,listHistoriesUseCase);
+    PointController controller = new PointController(userPointUseCase,listHistoriesUseCase,chargePointUseCase);
     MockMvc mockMvc;
 
     /** 여기서는 Controller 의 단위테스트만 진행하기 위해 standaloneSetup 으로 controller 를 주입해 mockMvc 를 초기화 */
@@ -135,8 +140,8 @@ class PointControllerTest {
     /**
      * 사용자 포인트 내역 조회 - 실패
      * 사용자 ID 로 포인트 내역 조회 시 포인트 내역이 없는 경우 예외 처리를 검증합니다.
-     * 포인트 내역이 없는경우 @{link} 이 발생합니다.
-     * 리턴 값으론 ErrorResponse를 반환합니다.
+     * 포인트 내역이 없는경우 {@link NotFoundException} 이 발생합니다.
+     * 리턴 값으론 ErrorResponse 를 반환합니다.
      * 검증
      * - 예외 응답의 상태는 NotFound 여야합니다.
      * - 예외 응답의 응답 상태값은 실패코드(404)를 반환해야합니다.
@@ -159,6 +164,63 @@ class PointControllerTest {
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.code").isNotEmpty())
                 .andExpect(jsonPath("$.message").isNotEmpty());
+    }
+
+    /**
+     * 사용자 포인트 충전 - 성공
+     * 사용자가 유효한 값으로 포인트 충전시 충전된 포인트를 반환 합니다.
+     *
+     * 검증
+     * - UserPoint 는 JSON 으로 반환되어야합니다.
+     * - 올바른 요청일 경우 응답 값은 성공(200) 이어야합니다.
+     * - 반환되는 포인트의 사용자 ID가 요청자의 ID와 동일해야합니다.
+     */
+    @DisplayName("유효한 사용자 ID로 포인트 충전 요청시, 충전된 사용자 포인트를 반환한다.")
+    @Test
+    void shouldReturnChargedPoint_whenCharge_withValidUserId() throws Exception {
+        //given
+        long userId = 1L, pointAmount = 10L;
+        UserPoint userPoint = new UserPoint(userId, pointAmount, System.currentTimeMillis());
+        given(chargePointUseCase.handle(new UserId(userId), pointAmount)).willReturn(userPoint);
+
+        String body = new ObjectMapper().writeValueAsString(new PointChargeRequest(pointAmount));
+
+        //when
+        mockMvc.perform(patch("/point/{id}/charge", userId)
+                        .content(body)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.point").value(pointAmount))
+                .andExpect(jsonPath("$.id").value(userId));
+    }
+
+    /**
+     * 사용자 포인트 충전 - 실패
+     * 사용자가 잘못된 포인트 수치로 충전을 요청할 경우 실패 응답 및 에러 코드를 반환합니다.
+     *
+     * 검증
+     * - 포인트는 항상 양수여야합니다.
+     * - 응답값은 JSON 이어야합니다.
+     * - 예외 응답의 상태코드는 처리불가 (422) 여야합니다.
+     * - 예외 응답 코드가 존재해야합니다.
+     */
+    @DisplayName("유효하지 않은 포인트(음수)로 포인트 충전 요청시, 충전 실패 예외와 예외 응답을 반환한다.")
+    @Test
+    void shouldReturnChargedPoint_whenCharge_withInvalidUserId() throws Exception {
+        //given
+        long userId = 1L , pointAmount = -1L;
+        String body = new ObjectMapper().writeValueAsString(new PointChargeRequest(pointAmount));
+
+        //when & then
+        mockMvc.perform(patch("/point/{id}/charge", userId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.code").isNotEmpty());
+
     }
 
 }

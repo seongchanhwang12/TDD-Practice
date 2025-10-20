@@ -35,7 +35,7 @@ class ChargePointUseCaseTest {
      */
     @DisplayName("Given 사용자 ID로, When 이미 저장된 포인트가 있을때 포인트를 저장하면 Then 포인트가 누적된다.")
     @Test
-    void givenValidUserId_whenChargePoint_saveUserPointAndPointHistoryByUserId() {
+    void givenValidUserId_whenChargePoint_saveUserPoint_AndPointHistoryByUserId() {
         //given
         long userId = 1L;
         long amount = 10L;

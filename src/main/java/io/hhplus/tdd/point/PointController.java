@@ -1,10 +1,12 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.point.usecase.ChargePointUseCase;
 import io.hhplus.tdd.point.usecase.GetUserPointUseCase;
 import io.hhplus.tdd.point.usecase.ListPointHistoriesUseCase;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +22,7 @@ public class PointController {
     private static final Logger log = LoggerFactory.getLogger(PointController.class);
     private final GetUserPointUseCase getUserPointUseCase;
     private final ListPointHistoriesUseCase ListHistoriesUseCase;
+    private final ChargePointUseCase chargePointUseCase;
 
     /**
      * 특정 사용자의 포인트 조회 요청 처리
@@ -41,17 +44,17 @@ public class PointController {
     }
 
     /**
-     * TODO - 특정 유저의 포인트를 충전하는 기능을 작성해주세요.
+     * 포인트 충전 요청 처리
      */
     @PatchMapping("{id}/charge")
-    public UserPoint charge(
-            @PathVariable long id,
-            @RequestBody long amount
+        public UserPoint charge(
+        @PathVariable long id,
+        @Validated @RequestBody PointChargeRequest request
     ) {
-        return new UserPoint(0, 0, 0);
+            return chargePointUseCase.handle(new UserId(id), request.point());
     }
 
-    /**
+    /**ㄴ
      * TODO - 특정 유저의 포인트를 사용하는 기능을 작성해주세요.
      */
     @PatchMapping("{id}/use")
