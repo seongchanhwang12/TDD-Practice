@@ -3,6 +3,8 @@ package io.hhplus.tdd.point;
 import io.hhplus.tdd.point.usecase.ChargePointUseCase;
 import io.hhplus.tdd.point.usecase.GetUserPointUseCase;
 import io.hhplus.tdd.point.usecase.ListPointHistoriesUseCase;
+import io.hhplus.tdd.point.usecase.UsePointUseCase;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,7 @@ public class PointController {
     private final GetUserPointUseCase getUserPointUseCase;
     private final ListPointHistoriesUseCase ListHistoriesUseCase;
     private final ChargePointUseCase chargePointUseCase;
+    private final UsePointUseCase usePointUseCase;
 
     /**
      * 특정 사용자의 포인트 조회 요청 처리
@@ -51,17 +54,17 @@ public class PointController {
         @PathVariable long id,
         @Validated @RequestBody PointChargeRequest request
     ) {
-            return chargePointUseCase.handle(new UserId(id), request.point());
+        return chargePointUseCase.handle(new UserId(id), request.point());
     }
 
-    /**ㄴ
+    /**
      * TODO - 특정 유저의 포인트를 사용하는 기능을 작성해주세요.
      */
     @PatchMapping("{id}/use")
     public UserPoint use(
             @PathVariable long id,
-            @RequestBody long amount
+            @Validated @RequestBody UsePointRequest request
     ) {
-        return new UserPoint(0, 0, 0);
+        return usePointUseCase.handle(new UserId(id), request.point());
     }
 }

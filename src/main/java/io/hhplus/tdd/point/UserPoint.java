@@ -20,4 +20,12 @@ public record UserPoint(
     public UserPoint plus(long newAmount) {
         return new UserPoint(id, point + newAmount, System.currentTimeMillis());
     }
+
+    public UserPoint minus(long usedPoint) {
+        long result = point - usedPoint;
+        if(result < 0){
+            throw new PolicyViolationException(PointErrorCode.INSUFFICIENT_POINT, "포인트가 부족합니다.");
+        }
+        return new UserPoint(id, result, System.currentTimeMillis());
+    }
 }

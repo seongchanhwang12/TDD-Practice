@@ -11,7 +11,10 @@ import org.springframework.http.HttpStatus;
 public enum PointErrorCode implements ErrorCode {
 
     NOT_FOUND(HttpStatus.NOT_FOUND, "PNT-404-NOT_FOUND", "error.point.not_found"),
-    INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "PNT-400-INVALID_AMOUNT", "error.point.invalid_amount"  );
+    INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "PNT-400-INVALID_AMOUNT", "error.point.invalid_amount" ),
+    INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "PNT-400-INSUFFICIENT_POINT", "error.point_insufficient_point")
+    ;
+
     private final HttpStatus status;
     private final String code;
     private final String messageKey;

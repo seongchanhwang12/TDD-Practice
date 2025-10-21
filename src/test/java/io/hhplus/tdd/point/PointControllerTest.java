@@ -6,13 +6,14 @@ import io.hhplus.tdd.ApiControllerAdvice;
 import io.hhplus.tdd.point.usecase.ChargePointUseCase;
 import io.hhplus.tdd.point.usecase.GetUserPointUseCase;
 import io.hhplus.tdd.point.usecase.ListPointHistoriesUseCase;
-import org.apache.catalina.User;
+import io.hhplus.tdd.point.usecase.UsePointUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -20,7 +21,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -28,11 +30,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PointControllerTest {
 
     private static final Logger log = LoggerFactory.getLogger(PointControllerTest.class);
-    GetUserPointUseCase userPointUseCase = mock(GetUserPointUseCase.class);
+
+    GetUserPointUseCase getUserPointUseCase = mock(GetUserPointUseCase.class);
     ListPointHistoriesUseCase listHistoriesUseCase = mock(ListPointHistoriesUseCase.class);
     ChargePointUseCase chargePointUseCase = mock(ChargePointUseCase.class);
+    UsePointUseCase usePointUseCase = mock(UsePointUseCase.class);
 
-    PointController controller = new PointController(userPointUseCase,listHistoriesUseCase,chargePointUseCase);
+    PointController controller = new PointController(getUserPointUseCase,listHistoriesUseCase,chargePointUseCase,usePointUseCase);
     MockMvc mockMvc;
 
     /** 여기서는 Controller 의 단위테스트만 진행하기 위해 standaloneSetup 으로 controller 를 주입해 mockMvc 를 초기화 */
@@ -40,6 +44,7 @@ class PointControllerTest {
     void init(){
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new ApiControllerAdvice())
+                .setMessageConverters(new MappingJackson2HttpMessageConverter())
                 .build();
     }
 
@@ -61,7 +66,7 @@ class PointControllerTest {
         long updateMillis = System.currentTimeMillis();
 
         UserPoint userPoint = new UserPoint(userId, point, updateMillis);
-        given(userPointUseCase.handle(new UserId(userId))).willReturn(userPoint);
+        given(getUserPointUseCase.handle(new UserId(userId))).willReturn(userPoint);
 
         //when & then
         mockMvc.perform(get("/point/{id}",userId))
@@ -146,15 +151,13 @@ class PointControllerTest {
      * - 예외 응답의 상태는 NotFound 여야합니다.
      * - 예외 응답의 응답 상태값은 실패코드(404)를 반환해야합니다.
      * - 예외 코드 및 메시지는 반드시 존재해야합니다. (변경 가능성이 있으므로 값이 비어있는지 여부만 확인합니다.)
-     *
-     *
      */
     @Test
     void shouldReturn404NotFound_whenGetPointHistoriesWithInvalidUserId() throws Exception {
         //given
         long userId = 1L;
 
-        willThrow(new NotFoundException(PointErrorCode.NOT_FOUND, ""))
+        willThrow(new NotFoundException(PointErrorCode.NOT_FOUND, "포인트 사용 내역이없습니다."))
                 .given(listHistoriesUseCase).handle(new UserId(userId));
 
         //when & then
@@ -222,5 +225,73 @@ class PointControllerTest {
                 .andExpect(jsonPath("$.code").isNotEmpty());
 
     }
+
+    /**
+     * 사용자 포인트 사용 - 성공
+     * 사용자가 유효한 포인트 사용 요청을 보내면, 포인트가 사용되고 잔액을 반환합니다.
+     *
+     * 검증
+     * - 포인트는 양수여야합니다.
+     * - 응답값은 JSON 이어야합니다.
+     * - 예외 응답의 상태코드는 성공 (200) 이어야합니다.
+     * - 포인트 사용요청자와 응답의 포인트의 회원 Id가 같아야합니다.
+     */
+    @DisplayName("유효한 사용자와 금액이면 200과 응답(잔액)을 반환한다")
+    @Test
+    void shouldReturn200ok_whenUsePoint_withValidUseIdAndPoint() throws Exception {
+        //given
+        long userId = 1L, pointAmount = 10L;
+        String body = new ObjectMapper().writeValueAsString(new UsePointRequest(pointAmount));
+
+        UserPoint usedAmount = new UserPoint(userId, 0, System.currentTimeMillis());
+
+        given(usePointUseCase.handle(new UserId(userId),pointAmount))
+                .willReturn(usedAmount);
+
+        //when && then
+        mockMvc.perform(patch("/point/{id}/use", userId)
+                        .content(body)
+                        .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.point").value(0))
+                .andExpect(jsonPath("$.id").value(userId));
+    }
+
+    /**
+     * 사용자 포인트 사용 - 실패
+     * 사용자가 포인트 사용 요청시 포인트 잔액이 부족할 경우를 검증합니다.
+     *
+     * 검증
+     * - UseCase 에서 예외를 던지면, 실패 응답을 반환해야합니다.
+     * - 예외 응답의 상태코드는 잘못된 요청 (400) 이어야합니다.
+     * - 실패 응답의 코드가 존재하고, 코드값은 PNT-400-INSUFFICIENT_POINT 이어야 합니다.
+     */
+    @DisplayName("유효한 사용자와 금액이면 400과 에러응답을 반환한다")
+    @Test
+    void shouldReturn400badRequest_whenUsePointWithInsufficientPoint() throws Exception {
+        //given
+        long userId = 1L, pointAmount = 10L;
+        String body = new ObjectMapper().writeValueAsString(new UsePointRequest(pointAmount));
+
+        given(usePointUseCase.handle(new UserId(userId),pointAmount))
+                .willThrow(new PolicyViolationException(PointErrorCode.INSUFFICIENT_POINT,"포인트 잔액이 부족합니다."));
+
+
+        //when && then
+        mockMvc.perform(patch("/point/{id}/use", userId)
+                        .content(body)
+                        .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.code").value("PNT-400-INSUFFICIENT_POINT"))
+                .andExpect(jsonPath("$.message").isNotEmpty());
+
+    }
+
+
 
 }
