@@ -27,10 +27,10 @@ public class UserPointTable {
         return userPoint;
     }
 
-    private void throttle(long millis) {
-        try {
-            TimeUnit.MILLISECONDS.sleep((long) (Math.random() * millis));
-        } catch (InterruptedException ignored) {
+        private void throttle(long millis) {
+            try {
+                TimeUnit.MILLISECONDS.sleep((long) (Math.random() * millis));
+            } catch (InterruptedException ignored) {
 
         }
     }
